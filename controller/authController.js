@@ -1,5 +1,6 @@
 const Users = require('../Model/userModel')
 const utils = require('../config/utilityFile')
+
 exports.signup = async function(req,res){
     //1. get data from user
     const user = {firstName,lastName,email,password} =req.body;
@@ -35,3 +36,49 @@ exports.signup = async function(req,res){
  
 }
 
+ exports.userLogin = async function (req,res) {
+    //1. Get email and password from user
+    const {email,password} = req.body
+    if(!email || !password){
+        res.status(400).json({
+            message:'Please Enter Emaill and Password'
+        })
+    }
+    else {
+        //2. find user by email,if user exist,verify password,if password is correct
+       
+       try {
+        const userFound = await Users.findOne({email})
+        if(userFound){
+            const hashedPassword =userFound.password
+            if(await utils.verifyPassword(password,userFound.password)){
+                //3. then generate token for user
+                const token = await utils.getToken(userFound._id)
+                res.status(200).json({
+                    user:userFound,
+                    token
+                })
+            }
+            else{
+                res.status(400).json({
+                    message:'Password Missmatch'
+                })
+            }
+        }
+        else{
+            res.status(404).json({
+                message: 'User not found'
+            })
+        }
+       } catch (error) {
+           console.log(error)
+           res.status(500).json({
+               message: "Please try later"
+           })
+       }
+    }
+    
+
+    
+    
+}
